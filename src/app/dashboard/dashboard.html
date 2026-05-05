@@ -1,7 +1,7 @@
 <div class="dashboard-container">
 
   <!-- Header -->
-  <div class="header">
+<div class="header">
     <div class="header-left">
       <div class="header-logo">P</div>
       <div>
@@ -14,6 +14,13 @@
         <div class="status-dot" [class.disconnected]="!connected"></div>
         <span>{{ connected ? 'Connected' : 'Disconnected' }}</span>
       </div>
+      <button
+        class="btn-start"
+        [class.btn-stop]="testRunning"
+        [disabled]="!connected"
+        (click)="testRunning ? stopTest() : startTest()">
+        {{ testRunning ? 'Stop Test' : 'Start Test' }}
+      </button>
     </div>
   </div>
 
@@ -60,6 +67,15 @@
       </div>
       <div class="chart-canvas-wrapper">
         <canvas id="responseTimeChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Throughput (req/s)</span>
+        <span class="chart-badge">Live</span>
+      </div>
+      <div class="chart-canvas-wrapper">
+        <canvas id="throughputChart"></canvas>
       </div>
     </div>
     <div class="chart-card">

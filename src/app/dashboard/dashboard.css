@@ -146,7 +146,7 @@ body {
 /* ── Charts Grid ── */
 .charts-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 16px;
   padding: 0 24px;
 }
@@ -289,4 +289,24 @@ tbody td {
   padding: 40px;
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+/* star button design */
+.btn-start {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent-green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+
+.btn-start:hover { opacity: 0.85; }
+.btn-start:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-stop {
+  background: var(--accent-red);
 }
