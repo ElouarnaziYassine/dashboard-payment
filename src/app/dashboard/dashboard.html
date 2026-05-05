@@ -1,0 +1,137 @@
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">P</div>
+      <div>
+        <div class="header-title">Payment Test Dashboard</div>
+        <div class="header-subtitle">Real-time JMeter results monitoring</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-indicator">
+        <div class="status-dot" [class.disconnected]="!connected"></div>
+        <span>{{ connected ? 'Connected' : 'Disconnected' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Total Requests</div>
+      <div class="metric-value blue">{{ metrics.total }}</div>
+      <div class="metric-sub">since test started</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Approved</div>
+      <div class="metric-value green">{{ metrics.approved }}</div>
+      <div class="metric-sub">{{ metrics.approvalRate }}% approval rate</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Declined</div>
+      <div class="metric-value red">{{ metrics.declined }}</div>
+      <div class="metric-sub">{{ metrics.declineRate }}% decline rate</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Avg Response</div>
+      <div class="metric-value blue">{{ metrics.avgResponseTime }}ms</div>
+      <div class="metric-sub">target &lt; 2000ms</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">SLA Breaches</div>
+      <div class="metric-value orange">{{ metrics.slaBreaches }}</div>
+      <div class="metric-sub">over 2000ms</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Failed Assertions</div>
+      <div class="metric-value red">{{ metrics.failedAssertions }}</div>
+      <div class="metric-sub">assertion errors</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Response Time</span>
+        <span class="chart-badge">Live</span>
+      </div>
+      <div class="chart-canvas-wrapper">
+        <canvas id="responseTimeChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Approved vs Declined</span>
+        <span class="chart-badge">Live</span>
+      </div>
+      <div class="chart-canvas-wrapper">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction Table -->
+  <div class="table-section">
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Live Transactions</span>
+        <span class="table-count">{{ transactions.length }} transactions</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Test</th>
+            <th>Card</th>
+            <th>Status</th>
+            <th>Response Time</th>
+            <th>Transaction ID</th>
+            <th>Merchant</th>
+            <th>Amount</th>
+            <th>SLA</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (transactions.length === 0) {
+            <tr>
+              <td colspan="9" class="empty-state">
+                Waiting for test results...
+              </td>
+            </tr>
+          }
+          @for (tx of transactions; track tx.transactionId) {
+            <tr>
+              <td style="color: var(--text-secondary)">{{ tx.timestamp | date:'HH:mm:ss' }}</td>
+              <td>{{ tx.testName }}</td>
+              <td style="font-family: monospace">{{ tx.maskedCard }}</td>
+              <td>
+                <span class="badge" [class.approved]="tx.status === 'APPROVED'" [class.declined]="tx.status === 'DECLINED'">
+                  {{ tx.status }}
+                </span>
+              </td>
+              <td>
+                <span class="response-time" [class.slow]="tx.responseTime > 2000" [class.fast]="tx.responseTime <= 2000">
+                  {{ tx.responseTime }}ms
+                </span>
+              </td>
+              <td style="font-family: monospace; color: var(--text-secondary)">{{ tx.transactionId }}</td>
+              <td style="color: var(--text-secondary)">{{ tx.merchantId }}</td>
+              <td>{{ tx.amount | currency:'MAD ':'code' }}</td>
+              <td>
+                @if (tx.slaBreached) {
+                  <span class="badge sla">BREACH</span>
+                } @else {
+                  <span style="color: var(--text-secondary)">OK</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
