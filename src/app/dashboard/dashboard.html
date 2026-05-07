@@ -1,7 +1,28 @@
 <div class="dashboard-container">
 
+  <!-- Alerts -->
+<div class="alerts-container">
+  @for (alert of alerts; track alert.id) {
+    <div class="alert" [class.danger]="alert.type === 'danger'"
+                       [class.warning]="alert.type === 'warning'"
+                       [class.info]="alert.type === 'info'"
+         (click)="dismissAlert(alert.id)">
+      <span class="alert-icon">
+        @if (alert.type === 'danger') { ✕ }
+        @if (alert.type === 'warning') { ⚠ }
+        @if (alert.type === 'info') { ℹ }
+      </span>
+      <div class="alert-content">
+        <div class="alert-title">{{ alert.title }}</div>
+        <div class="alert-message">{{ alert.message }}</div>
+      </div>
+      <span class="alert-close">×</span>
+    </div>
+  }
+</div>   
+
   <!-- Header -->
-<div class="header">
+  <div class="header">
     <div class="header-left">
       <div class="header-logo">P</div>
       <div>
@@ -14,6 +35,14 @@
         <div class="status-dot" [class.disconnected]="!connected"></div>
         <span>{{ connected ? 'Connected' : 'Disconnected' }}</span>
       </div>
+      <select
+        class="test-selector"
+        [(ngModel)]="selectedTest"
+        [disabled]="testRunning">
+        @for (test of availableTests; track test.key) {
+          <option [value]="test.key">{{ test.name }}</option>
+        }
+      </select>
       <button
         class="btn-start"
         [class.btn-stop]="testRunning"

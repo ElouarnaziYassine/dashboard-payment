@@ -4,13 +4,14 @@ import { WebsocketService } from '../websocket';
 import { TestControlService } from '../test-control';
 import { Subscription } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
+import { FormsModule } from '@angular/forms';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, CurrencyPipe],
+  imports: [CommonModule, DatePipe, CurrencyPipe, FormsModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   encapsulation: ViewEncapsulation.None
@@ -19,6 +20,9 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   connected = false;
   testRunning = false;
+  selectedTest = 'card-authorization';
+  availableTests: any[] = [];
+  alerts: any[] = [];
   transactions: any[] = [];
   metrics = {
     total: 0,
@@ -38,6 +42,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   private chartUpdateTimer: any = null;
   private throughputChart: Chart | null = null;
   private requestTimestamps: number[] = [];
+  private alertIdCounter = 0;
 
   constructor(
     private wsService: WebsocketService,
@@ -47,6 +52,9 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.wsService.connect();
+    this.testControl.getTests().subscribe(tests => {
+      this.availableTests = tests;  
+    });
 
     this.subs.push(
       this.wsService.connected$.subscribe(status => {
@@ -86,7 +94,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 }
 
   startTest(): void {
-    this.testControl.startTest().subscribe({
+    this.testControl.startTest(this.selectedTest).subscribe({
       next: (res) => {
         if (res.success) {
           this.testRunning = true;
@@ -108,6 +116,21 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => console.error('Failed to stop test', err)
     });
+  }
+
+  addAlert(type: string, title: string, message: string): void {
+  const id = this.alertIdCounter++;
+  this.alerts.push({ id, type, title, message });
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+      this.dismissAlert(id);
+      this.cdr.detectChanges();
+    }, 5000);
+  }
+
+  dismissAlert(id: number): void {
+    this.alerts = this.alerts.filter(a => a.id !== id);
   }
 
   resetMetrics(): void {
@@ -321,19 +344,35 @@ flushChartUpdates(): void {
   }
 
   updateMetrics(result: any): void {
-    this.metrics.total++;
-    if (result.status === 'APPROVED') this.metrics.approved++;
-    if (result.status === 'DECLINED') this.metrics.declined++;
-    if (result.slaBreached) this.metrics.slaBreaches++;
-    if (!result.assertionPassed) this.metrics.failedAssertions++;
-
-    const total = this.metrics.total;
-    this.metrics.approvalRate = Math.round((this.metrics.approved / total) * 100);
-    this.metrics.declineRate  = Math.round((this.metrics.declined / total) * 100);
-
-    const totalTime = this.transactions.reduce((sum, t) => sum + t.responseTime, 0);
-    this.metrics.avgResponseTime = Math.round(totalTime / this.transactions.length);
+  this.metrics.total++;
+  if (result.status === 'APPROVED' || result.status === 'SUCCESS') this.metrics.approved++;
+  if (result.status === 'DECLINED') this.metrics.declined++;
+  if (result.slaBreached) {
+    this.metrics.slaBreaches++;
+    this.addAlert('danger', 'SLA Breach Detected',
+      `Request exceeded 2000ms — ${result.responseTime}ms | Card: ${result.maskedCard}`);
   }
+  if (!result.assertionPassed) {
+    this.metrics.failedAssertions++;
+    this.addAlert('danger', 'Assertion Failed',
+      `${result.testName} | Card: ${result.maskedCard} | Status: ${result.status}`);
+  }
+
+  const total = this.metrics.total;
+  this.metrics.approvalRate = Math.round((this.metrics.approved / total) * 100);
+  this.metrics.declineRate  = Math.round((this.metrics.declined / total) * 100);
+
+  // Warn if decline rate exceeds 50%
+  if (total > 10 && this.metrics.declineRate > 50) {
+    if (this.alerts.filter(a => a.title === 'High Decline Rate').length === 0) {
+      this.addAlert('warning', 'High Decline Rate',
+        `${this.metrics.declineRate}% of transactions are being declined`);
+    }
+  }
+
+  const totalTime = this.transactions.reduce((sum, t) => sum + t.responseTime, 0);
+  this.metrics.avgResponseTime = Math.round(totalTime / this.transactions.length);
+}
 
   ngOnDestroy(): void {
     this.subs.forEach(s => s.unsubscribe());

@@ -11,8 +11,8 @@ export class TestControlService {
 
   constructor(private http: HttpClient) {}
 
-  startTest(): Observable<any> {
-    return this.http.post(`${this.baseUrl}/start`, {});
+  startTest(testKey: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/start`, { testKey });
   }
 
   stopTest(): Observable<any> {
@@ -21,5 +21,9 @@ export class TestControlService {
 
   getStatus(): Observable<any> {
     return this.http.get(`${this.baseUrl}/status`);
+  }
+
+  getTests(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/list`);
   }
 }
